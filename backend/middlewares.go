@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"context"
@@ -7,11 +7,11 @@ import (
 	"github.com/go-kit/kit/log"
 )
 
-// Middleware describes a service (as opposed to endpoint) middleware.
-type Middleware func(Service) Service
+// Middleware describes a BackendService (as opposed to endpoint) middleware.
+type Middleware func(BackendService) BackendService
 
-func LoggingMiddleware(logger log.Logger) Middleware {
-	return func(next Service) Service {
+func LoggingBackendMiddleware(logger log.Logger) Middleware {
+	return func(next BackendService) BackendService {
 		return &loggingMiddleware{
 			next:   next,
 			logger: logger,
@@ -20,7 +20,7 @@ func LoggingMiddleware(logger log.Logger) Middleware {
 }
 
 type loggingMiddleware struct {
-	next   Service
+	next   BackendService
 	logger log.Logger
 }
 
@@ -31,13 +31,13 @@ func (mw loggingMiddleware) GetController(ctx context.Context, bid string) (c Co
 	return mw.next.GetController(ctx, bid)
 }
 
-func (mw loggingMiddleware) PostCancelActionFeedback(ctx context.Context, bid string, acid string,
+func (mw loggingMiddleware) PostCancelActionFeedback(ctx context.Context, bid string,
 	fb CancelActionFeedback) (err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "PostCancelActionFeedback", "bid", bid, "acid", acid, "took", time.Since(begin),
+		mw.logger.Log("method", "PostCancelActionFeedback", "bid", bid, "took", time.Since(begin),
 			"err", err)
 	}(time.Now())
-	return mw.next.PostCancelActionFeedback(ctx, bid, acid, fb)
+	return mw.next.PostCancelActionFeedback(ctx, bid, fb)
 }
 
 func (mw loggingMiddleware) PostConfigData(ctx context.Context, bid string, cfg ConfigData) (err error) {
@@ -47,20 +47,21 @@ func (mw loggingMiddleware) PostConfigData(ctx context.Context, bid string, cfg 
 	return mw.next.PostConfigData(ctx, bid, cfg)
 }
 
-func (mw loggingMiddleware) GetDeplymentBase(ctx context.Context, bid string) (d DeploymentBase, err error) {
+func (mw loggingMiddleware) GetDeplymentBase(ctx context.Context, bid string,
+	acid string) (d DeploymentBase, err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetDeplymentBase", "bid", bid, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "GetDeplymentBase", "bid", bid, "acid", acid, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.GetDeplymentBase(ctx, bid)
+	return mw.next.GetDeplymentBase(ctx, bid, acid)
 }
 
-func (mw loggingMiddleware) PostDeploymentBaseFeedback(ctx context.Context, bid string, acid string,
+func (mw loggingMiddleware) PostDeploymentBaseFeedback(ctx context.Context, bid string,
 	fb DeploymentBaseFeedback) (err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "PostDeploymentBaseFeedback", "bid", bid, "acid", acid, "took", time.Since(begin),
+		mw.logger.Log("method", "PostDeploymentBaseFeedback", "bid", bid, "took", time.Since(begin),
 			"err", err)
 	}(time.Now())
-	return mw.next.PostDeploymentBaseFeedback(ctx, bid, acid, fb)
+	return mw.next.PostDeploymentBaseFeedback(ctx, bid, fb)
 }
 
 func (mw loggingMiddleware) GetDownloadHttp(ctx context.Context, bid string, ver string) (f []byte, err error) {

@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/jonathanyhliang/hawkbit-fota/deployment"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
@@ -19,9 +20,9 @@ var (
 	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
 )
 
-func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
+func MakeBackendHTTPHandler(s BackendService, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
-	e := MakeServerEndpoints(s)
+	e := MakeBackendServerEndpoints(s)
 	options := []httptransport.ServerOption{
 		httptransport.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		httptransport.ServerErrorEncoder(encodeError),
@@ -87,15 +88,11 @@ func decodePostCancelActionFeebackEndpoint(_ context.Context, r *http.Request) (
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	acid, ok := vars["acid"]
-	if !ok {
-		return nil, ErrBadRouting
-	}
 	var fb CancelActionFeedback
 	if e := json.NewDecoder(r.Body).Decode(&fb); e != nil {
 		return nil, e
 	}
-	return postCancelActionFeedbackRequest{BID: bid, ACID: acid, Fb: fb}, nil
+	return postCancelActionFeedbackRequest{BID: bid, Fb: fb}, nil
 }
 
 func decodePostConfigDataEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -130,15 +127,11 @@ func decodePostDeploymentBaseFeedbackEndpoint(_ context.Context, r *http.Request
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	acid, ok := vars["acid"]
-	if !ok {
-		return nil, ErrBadRouting
-	}
 	var fb DeploymentBaseFeedback
 	if e := json.NewDecoder(r.Body).Decode(&fb); e != nil {
 		return nil, e
 	}
-	return postDeploymentBaseFeedbackRequest{BID: bid, ACID: acid, Fb: fb}, nil
+	return postDeploymentBaseFeedbackRequest{BID: bid, Fb: fb}, nil
 }
 
 func decodeGetDownloadHttpEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -201,9 +194,9 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 
 func codeFrom(err error) int {
 	switch err {
-	case ErrDeploymentNotFound:
+	case deployment.ErrDeploymentNotFound:
 		return http.StatusNotFound
-	case ErrDownloadImage:
+	case ErrBackendBadRequest, ErrBackendDownload:
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError

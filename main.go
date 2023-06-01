@@ -9,20 +9,18 @@ import (
 	"syscall"
 
 	"github.com/go-kit/log"
+	"github.com/jonathanyhliang/hawkbit-fota/backend"
+	"github.com/jonathanyhliang/hawkbit-fota/frontend"
 )
 
 func main() {
 	var (
-		httpAddr = flag.String("http.addr", "192.168.179.5:8080", "HTTP listen address")
+		BackendAddr  = flag.String("ba", "192.168.179.5:8080", "Backend HTTP listen address")
+		FrontendAddr = flag.String("fa", ":8080", "Frontend HTTP listen address")
 	)
 	flag.Parse()
 
 	errs := make(chan error)
-
-	var m Message
-	{
-		m = NewHawkbitMessage()
-	}
 
 	var logger log.Logger
 	{
@@ -31,15 +29,26 @@ func main() {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
-	var s Service
+	var bs backend.BackendService
 	{
-		s = NewHawkbitService()
-		s = LoggingMiddleware(logger)(s)
+		bs = backend.NewHawkbitBackendService()
+		bs = backend.LoggingBackendMiddleware(logger)(bs)
 	}
 
-	var h http.Handler
+	var fs frontend.FrontendService
 	{
-		h = MakeHTTPHandler(s, log.With(logger, "component", "HTTP"))
+		fs = frontend.NewHawkbitFrontendService()
+		fs = frontend.LoggingFrontendMiddleware(logger)(fs)
+	}
+
+	var bh http.Handler
+	{
+		bh = backend.MakeBackendHTTPHandler(bs, log.With(logger, "component", "HTTP"))
+	}
+
+	var fh http.Handler
+	{
+		fh = frontend.MakeFrontendHTTPHandler(fs, log.With(logger, "component", "HTTP"))
 	}
 
 	go func() {
@@ -49,14 +58,14 @@ func main() {
 	}()
 
 	go func() {
-		errs <- m.Server()
+		logger.Log("backend", "HTTP", "addr", *BackendAddr)
+		errs <- http.ListenAndServe(*BackendAddr, bh)
 	}()
 
 	go func() {
-		logger.Log("transport", "HTTP", "addr", *httpAddr)
-		errs <- http.ListenAndServe(*httpAddr, h)
+		logger.Log("frontend", "HTTP", "addr", *FrontendAddr)
+		errs <- http.ListenAndServe(*FrontendAddr, fh)
 	}()
 
 	logger.Log("exit", <-errs)
-
 }

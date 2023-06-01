@@ -1,14 +1,18 @@
-package main
+package backend
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+
+	"github.com/jonathanyhliang/hawkbit-fota/deployment"
 )
 
 var (
-	ErrDownloadImage = errors.New("download image failed")
+	ErrBackendDownload   = errors.New("Backend: image download failed")
+	ErrBackendBadRequest = errors.New("Backend: bad request")
 )
 
 type Controller struct {
@@ -101,28 +105,25 @@ type DeploymentBaseFeedback struct {
 	} `json:"status"`
 }
 
-type Service interface {
+type BackendService interface {
 	GetController(ctx context.Context, bid string) (Controller, error)
-	PostCancelActionFeedback(ctx context.Context, bid string, acid string, fb CancelActionFeedback) error
+	PostCancelActionFeedback(ctx context.Context, bid string, fb CancelActionFeedback) error
 	PostConfigData(ctx context.Context, bid string, cfg ConfigData) error
-	GetDeplymentBase(ctx context.Context, bid string) (DeploymentBase, error)
-	PostDeploymentBaseFeedback(ctx context.Context, bid string, acid string, fb DeploymentBaseFeedback) error
+	GetDeplymentBase(ctx context.Context, bid string, acid string) (DeploymentBase, error)
+	PostDeploymentBaseFeedback(ctx context.Context, bid string, fb DeploymentBaseFeedback) error
 	GetDownloadHttp(ctx context.Context, bid string, img string) ([]byte, error)
 }
 
-type hawkbitService struct{}
+type hawkbitBackendService struct{}
 
-func NewHawkbitService() Service {
-	return &hawkbitService{}
+func NewHawkbitBackendService() BackendService {
+	return &hawkbitBackendService{}
 }
 
-func (h *hawkbitService) GetController(ctx context.Context, bid string) (Controller, error) {
+func (h *hawkbitBackendService) GetController(ctx context.Context, bid string) (Controller, error) {
 	var c Controller
-	if d, err := dp.GetDeployment(bid); err != nil {
-		d.BID = bid
-		dp.PostDeployment(bid, d)
-	} else {
-		href := fmt.Sprintf("/default/controller/v1/%s/deploymentBase/%d", d.BID, d.Distribution.ACID)
+	if d, err := deployment.GetDeployment(bid); err == nil {
+		href := fmt.Sprintf("/default/controller/v1/%s/deploymentBase/%d", d.Target, d.ActionId)
 		c.Links.DeploymentBase.Href = href
 	}
 	c.Config.Polling.Sleep = "00:05:00"
@@ -130,58 +131,71 @@ func (h *hawkbitService) GetController(ctx context.Context, bid string) (Control
 	return c, nil
 }
 
-func (h *hawkbitService) PostCancelActionFeedback(ctx context.Context, bid string, acid string,
+func (h *hawkbitBackendService) PostCancelActionFeedback(ctx context.Context, bid string,
 	fb CancelActionFeedback) error {
-	var d Deployment
-	d.Status = fb.Status
-	if err := dp.PutDeploymentStatus(bid, d); err != nil {
+	actionId, err := strconv.Atoi(fb.ID)
+	if err != nil {
+		return ErrBackendBadRequest
+	}
+	if err = deployment.UpdateStatus(bid, actionId, fb.Status); err != nil {
 		return err
 	}
 	return nil
 
 }
 
-func (h *hawkbitService) PostConfigData(ctx context.Context, bid string, cfg ConfigData) error {
+func (h *hawkbitBackendService) PostConfigData(ctx context.Context, bid string, cfg ConfigData) error {
 	return nil
 }
 
-func (h *hawkbitService) GetDeplymentBase(ctx context.Context, bid string) (DeploymentBase, error) {
-	var db DeploymentBase
-	d, err := dp.GetDeployment(bid)
+func (h *hawkbitBackendService) GetDeplymentBase(ctx context.Context, bid string,
+	acid string) (DeploymentBase, error) {
+	actionId, err := strconv.Atoi(acid)
+	if err != nil {
+		return DeploymentBase{}, ErrBackendBadRequest
+	}
+	d, err := deployment.GetDeployment(bid)
 	if err != nil {
 		return DeploymentBase{}, err
 	}
-	db.ID = d.BID
+	if actionId != d.ActionId {
+		return DeploymentBase{}, ErrBackendBadRequest
+	}
+
+	var db DeploymentBase
+	db.ID = d.Target
 	db.Deployment.Chunks[0].Part = "bApp"
-	db.Deployment.Chunks[0].Version = d.Distribution.Artifact.Version
-	db.Deployment.Chunks[0].Artifacts[0].Hashes.SHA256 = d.Distribution.Artifact.Sha256
-	db.Deployment.Chunks[0].Artifacts[0].Size = d.Distribution.Artifact.Size
-	href := "/DEFAULT/controller/v1/" + d.BID + "/softwareModules/" + d.Distribution.Artifact.Version
+	db.Deployment.Chunks[0].Version = d.Artifact.Version
+	db.Deployment.Chunks[0].Artifacts[0].Hashes.SHA256 = d.Artifact.Upload.Sha256
+	db.Deployment.Chunks[0].Artifacts[0].Size = d.Artifact.Upload.Size
+	href := "/DEFAULT/controller/v1/" + bid + "/softwareModules/" + d.Artifact.Upload.Version
 	db.Deployment.Chunks[0].Artifacts[0].Links.DownloadHttp.Href = href
 	return db, nil
 }
 
-func (h *hawkbitService) PostDeploymentBaseFeedback(ctx context.Context, bid string, acid string,
+func (h *hawkbitBackendService) PostDeploymentBaseFeedback(ctx context.Context, bid string,
 	fb DeploymentBaseFeedback) error {
-	var d Deployment
-	d.Status = fb.Status
-	if err := dp.PutDeploymentStatus(bid, d); err != nil {
+	acid, err := strconv.Atoi(fb.ID)
+	if err != nil {
+		return ErrBackendBadRequest
+	}
+	if err = deployment.UpdateStatus(bid, acid, fb.Status); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (h *hawkbitService) GetDownloadHttp(ctx context.Context, bid string, ver string) ([]byte, error) {
-	d, err := dp.GetDeployment(bid)
+func (h *hawkbitBackendService) GetDownloadHttp(ctx context.Context, bid string, ver string) ([]byte, error) {
+	d, err := deployment.GetDeployment(bid)
 	if err != nil {
 		return nil, err
 	}
-	if ver != d.Distribution.Artifact.Version {
+	if ver != d.Artifact.Upload.Version {
 		return nil, err
 	}
-	f, err := os.ReadFile(d.Distribution.Artifact.File)
+	f, err := os.ReadFile(d.Artifact.Upload.File)
 	if err != nil {
-		return nil, ErrDownloadImage
+		return nil, ErrBackendDownload
 	}
 	return f, nil
 }

@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type Endpoints struct {
 	GetDownloadHttpEndpoint            endpoint.Endpoint
 }
 
-func MakeServerEndpoints(s Service) Endpoints {
+func MakeBackendServerEndpoints(s BackendService) Endpoints {
 	return Endpoints{
 		GetControllerEndpoint:              MakeGetControllerEndpoint(s),
 		PostCancelActionFeebackEndpoint:    MakePostCancelActionFeedbackEndpoint(s),
@@ -26,7 +26,7 @@ func MakeServerEndpoints(s Service) Endpoints {
 	}
 }
 
-func MakeGetControllerEndpoint(s Service) endpoint.Endpoint {
+func MakeGetControllerEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getControllerRequest)
 		c, e := s.GetController(ctx, req.BID)
@@ -34,15 +34,15 @@ func MakeGetControllerEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
-func MakePostCancelActionFeedbackEndpoint(s Service) endpoint.Endpoint {
+func MakePostCancelActionFeedbackEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(postCancelActionFeedbackRequest)
-		e := s.PostCancelActionFeedback(ctx, req.BID, req.ACID, req.Fb)
+		e := s.PostCancelActionFeedback(ctx, req.BID, req.Fb)
 		return postCancelActionFeedbackResponse{Err: e}, nil
 	}
 }
 
-func MakePostConfigDataEndpoint(s Service) endpoint.Endpoint {
+func MakePostConfigDataEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(postConfigDataRequest)
 		e := s.PostConfigData(ctx, req.BID, req.Cfg)
@@ -50,23 +50,23 @@ func MakePostConfigDataEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
-func MakeGetDeploymentBaseEndpoint(s Service) endpoint.Endpoint {
+func MakeGetDeploymentBaseEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getDeplymentBaseRequest)
-		d, e := s.GetDeplymentBase(ctx, req.BID)
+		d, e := s.GetDeplymentBase(ctx, req.BID, req.ACID)
 		return getDeplymentBaseResponse{Dp: d, Err: e}, nil
 	}
 }
 
-func MakePostDeploymentBaseFeedbackEndpoint(s Service) endpoint.Endpoint {
+func MakePostDeploymentBaseFeedbackEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(postDeploymentBaseFeedbackRequest)
-		e := s.PostDeploymentBaseFeedback(ctx, req.BID, req.ACID, req.Fb)
+		e := s.PostDeploymentBaseFeedback(ctx, req.BID, req.Fb)
 		return postDeploymentBaseFeedbackResponse{Err: e}, nil
 	}
 }
 
-func MakeGetDownloadHttpEndpoint(s Service) endpoint.Endpoint {
+func MakeGetDownloadHttpEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getDownloadHttpRequest)
 		f, e := s.GetDownloadHttp(ctx, req.BID, req.Ver)
@@ -86,9 +86,8 @@ type getControllerResponse struct {
 func (r getControllerResponse) error() error { return r.Err }
 
 type postCancelActionFeedbackRequest struct {
-	BID  string
-	ACID string
-	Fb   CancelActionFeedback `json:"cancelActionFeedback,omitempty"`
+	BID string
+	Fb  CancelActionFeedback `json:"cancelActionFeedback,omitempty"`
 }
 
 type postCancelActionFeedbackResponse struct {
@@ -119,9 +118,8 @@ type getDeplymentBaseResponse struct {
 }
 
 type postDeploymentBaseFeedbackRequest struct {
-	BID  string
-	ACID string
-	Fb   DeploymentBaseFeedback `json:"deploymentBaseFeedback,omitempty"`
+	BID string
+	Fb  DeploymentBaseFeedback `json:"deploymentBaseFeedback,omitempty"`
 }
 
 type postDeploymentBaseFeedbackResponse struct {
@@ -131,8 +129,9 @@ type postDeploymentBaseFeedbackResponse struct {
 func (r getDeplymentBaseResponse) error() error { return r.Err }
 
 type getDownloadHttpRequest struct {
-	BID string
-	Ver string
+	BID  string
+	ACID string
+	Ver  string
 }
 
 type getDownloadHttpResponse struct {
