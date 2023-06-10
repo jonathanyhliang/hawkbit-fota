@@ -28,43 +28,43 @@ func MakeBackendHTTPHandler(s BackendService, logger log.Logger) http.Handler {
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	// GET	/default/controller/v1/:bid  							retrieves actions that need to be executed
-	// POST	/default/controller/v1/:bid/cancelAction/:acid/feedback	post action cancellation result
-	// POST /default/controller/v1/:bid/configData       			post hardware level identification of the target
-	// GET 	/default/controller/v1/:bid/deploymentBase/:acid   		retrieves core resource for deployment operations
-	// GET  /DEFAULT/controller/v1/:bid/softwareModules/:ver   		retrieves artifcat for update
+	// Get	/default/controller/v1/:Bid  							retrieves actions that need to be executed
+	// Post	/default/controller/v1/:Bid/cancelAction/:Acid/feedback	Post action cancellation result
+	// Post /default/controller/v1/:Bid/configData       			Post hardware level identification of the tarGet
+	// Get 	/default/controller/v1/:Bid/deploymentBase/:Acid   		retrieves core resource for deployment operations
+	// Get  /DEFAULT/controller/v1/:Bid/softwareModules/:ver   		retrieves artifcat for update
 
-	r.Methods("GET").Path("/default/controller/v1/{bid}").Handler(httptransport.NewServer(
+	r.Methods("Get").Path("/default/controller/v1/{Bid}").Handler(httptransport.NewServer(
 		e.GetControllerEndpoint,
 		decodeGetControllerEndpoint,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("POST").Path("/default/controller/v1/{bid}/cancelAction/{acid}/feedback").Handler(httptransport.NewServer(
+	r.Methods("Post").Path("/default/controller/v1/{Bid}/cancelAction/{Acid}/feedback").Handler(httptransport.NewServer(
 		e.PostCancelActionFeebackEndpoint,
 		decodePostCancelActionFeebackEndpoint,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("POST").Path("/default/controller/v1/{bid}/configData").Handler(httptransport.NewServer(
+	r.Methods("Post").Path("/default/controller/v1/{Bid}/configData").Handler(httptransport.NewServer(
 		e.PostConfigDataEndpoint,
 		decodePostConfigDataEndpoint,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("GET").Path("/default/controller/v1/{bid}/deploymentBase/{acid}").Handler(httptransport.NewServer(
+	r.Methods("Get").Path("/default/controller/v1/{Bid}/deploymentBase/{Acid}").Handler(httptransport.NewServer(
 		e.GetDeploymentBaseEndpoint,
 		decodeGetDeploymentBaseEndpoint,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("POST").Path("/default/controller/v1/{bid}/deploymentBase/{acid}/feedback").Handler(httptransport.NewServer(
+	r.Methods("Post").Path("/default/controller/v1/{Bid}/deploymentBase/{Acid}/feedback").Handler(httptransport.NewServer(
 		e.PostDeploymentBaseFeedbackEndpoint,
 		decodePostDeploymentBaseFeedbackEndpoint,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("GET").Path("/DEFAULT/controller/v1/{bid}/softwareModules/{ver}").Handler(httptransport.NewServer(
+	r.Methods("Get").Path("/DEFAULT/controller/v1/{Bid}/softwareModules/{ver}").Handler(httptransport.NewServer(
 		e.GetDownloadHttpEndpoint,
 		decodeGetDownloadHttpEndpoint,
 		encodeDownloadHttpResponse,
@@ -75,16 +75,16 @@ func MakeBackendHTTPHandler(s BackendService, logger log.Logger) http.Handler {
 
 func decodeGetControllerEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
-	bid, ok := vars["bid"]
+	Bid, ok := vars["Bid"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	return getControllerRequest{BID: bid}, nil
+	return GetControllerRequest{Bid: Bid}, nil
 }
 
 func decodePostCancelActionFeebackEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
-	bid, ok := vars["bid"]
+	Bid, ok := vars["Bid"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
@@ -92,12 +92,12 @@ func decodePostCancelActionFeebackEndpoint(_ context.Context, r *http.Request) (
 	if e := json.NewDecoder(r.Body).Decode(&fb); e != nil {
 		return nil, e
 	}
-	return postCancelActionFeedbackRequest{BID: bid, Fb: fb}, nil
+	return PostCancelActionFeedbackRequest{Bid: Bid, Fb: fb}, nil
 }
 
 func decodePostConfigDataEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
-	bid, ok := vars["bid"]
+	Bid, ok := vars["Bid"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
@@ -105,25 +105,25 @@ func decodePostConfigDataEndpoint(_ context.Context, r *http.Request) (request i
 	if e := json.NewDecoder(r.Body).Decode(&cfg); e != nil {
 		return nil, e
 	}
-	return postConfigDataRequest{BID: bid, Cfg: cfg}, nil
+	return PostConfigDataRequest{Bid: Bid, Cfg: cfg}, nil
 }
 
 func decodeGetDeploymentBaseEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
-	bid, ok := vars["bid"]
+	Bid, ok := vars["Bid"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	acid, ok := vars["acid"]
+	Acid, ok := vars["Acid"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	return getDeplymentBaseRequest{BID: bid, ACID: acid}, nil
+	return GetDeplymentBaseRequest{Bid: Bid, Acid: Acid}, nil
 }
 
 func decodePostDeploymentBaseFeedbackEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
-	bid, ok := vars["bid"]
+	Bid, ok := vars["Bid"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
@@ -131,12 +131,12 @@ func decodePostDeploymentBaseFeedbackEndpoint(_ context.Context, r *http.Request
 	if e := json.NewDecoder(r.Body).Decode(&fb); e != nil {
 		return nil, e
 	}
-	return postDeploymentBaseFeedbackRequest{BID: bid, Fb: fb}, nil
+	return PostDeploymentBaseFeedbackRequest{Bid: Bid, Fb: fb}, nil
 }
 
 func decodeGetDownloadHttpEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
-	bid, ok := vars["bid"]
+	Bid, ok := vars["Bid"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
@@ -144,7 +144,7 @@ func decodeGetDownloadHttpEndpoint(_ context.Context, r *http.Request) (request 
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	return getDownloadHttpRequest{BID: bid, Ver: ver}, nil
+	return GetDownloadHttpRequest{Bid: Bid, Ver: ver}, nil
 }
 
 type errorer interface {
