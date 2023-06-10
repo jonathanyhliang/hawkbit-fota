@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/jonathanyhliang/hawkbit-fota/deployment"
 )
@@ -123,7 +122,7 @@ func NewHawkbitBackendService() BackendService {
 func (h *hawkbitBackendService) GetController(ctx context.Context, bid string) (Controller, error) {
 	var c Controller
 	if d, err := deployment.GetDeployment(bid); err == nil {
-		href := fmt.Sprintf("/default/controller/v1/%s/deploymentBase/%d", d.Target, d.ActionId)
+		href := fmt.Sprintf("/default/controller/v1/%s/deploymentBase/%s", d.Target, d.ActionId)
 		c.Links.DeploymentBase.Href = href
 	}
 	c.Config.Polling.Sleep = "00:05:00"
@@ -133,11 +132,7 @@ func (h *hawkbitBackendService) GetController(ctx context.Context, bid string) (
 
 func (h *hawkbitBackendService) PostCancelActionFeedback(ctx context.Context, bid string,
 	fb CancelActionFeedback) error {
-	actionId, err := strconv.Atoi(fb.ID)
-	if err != nil {
-		return ErrBackendBadRequest
-	}
-	if err = deployment.UpdateStatus(bid, actionId, fb.Status); err != nil {
+	if err := deployment.UpdateStatus(bid, fb.ID, fb.Status); err != nil {
 		return err
 	}
 	return nil
@@ -150,15 +145,11 @@ func (h *hawkbitBackendService) PostConfigData(ctx context.Context, bid string, 
 
 func (h *hawkbitBackendService) GetDeplymentBase(ctx context.Context, bid string,
 	acid string) (DeploymentBase, error) {
-	actionId, err := strconv.Atoi(acid)
-	if err != nil {
-		return DeploymentBase{}, ErrBackendBadRequest
-	}
 	d, err := deployment.GetDeployment(bid)
 	if err != nil {
 		return DeploymentBase{}, err
 	}
-	if actionId != d.ActionId {
+	if acid != d.ActionId {
 		return DeploymentBase{}, ErrBackendBadRequest
 	}
 
@@ -175,11 +166,7 @@ func (h *hawkbitBackendService) GetDeplymentBase(ctx context.Context, bid string
 
 func (h *hawkbitBackendService) PostDeploymentBaseFeedback(ctx context.Context, bid string,
 	fb DeploymentBaseFeedback) error {
-	acid, err := strconv.Atoi(fb.ID)
-	if err != nil {
-		return ErrBackendBadRequest
-	}
-	if err = deployment.UpdateStatus(bid, acid, fb.Status); err != nil {
+	if err := deployment.UpdateStatus(bid, fb.ID, fb.Status); err != nil {
 		return err
 	}
 	return nil

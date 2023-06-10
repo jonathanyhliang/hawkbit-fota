@@ -10,8 +10,17 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/jonathanyhliang/hawkbit-fota/backend"
+	"github.com/jonathanyhliang/hawkbit-fota/docs"
 	"github.com/jonathanyhliang/hawkbit-fota/frontend"
 )
+
+//	@title		Hawkbit FOTA Service API
+//	@version	1.0
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@host	localhost:port/hawkbit
 
 func main() {
 	var (
@@ -63,6 +72,7 @@ func main() {
 	}()
 
 	go func() {
+		docs.SwaggerInfo.BasePath = "/"
 		logger.Log("frontend", "HTTP", "addr", *FrontendAddr)
 		errs <- http.ListenAndServe(*FrontendAddr, fh)
 	}()

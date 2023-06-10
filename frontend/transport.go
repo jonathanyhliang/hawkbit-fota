@@ -12,6 +12,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 var (
@@ -28,13 +29,15 @@ func MakeFrontendHTTPHandler(s FrontendService, logger log.Logger) http.Handler 
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	// POST	/hawkbit/upload  							retrieves actions that need to be executed
-	// POST	/hawkbit/dist	post action cancellation result
-	// POST /hawkbit/deploy       			post hardware level identification of the target
-
 	r.Methods("POST").Path("/hawkbit/upload").Handler(httptransport.NewServer(
 		e.PostUpload,
 		decodePostUploadEndpoint,
+		encodeResponse,
+		options...,
+	))
+	r.Methods("GET").Path("/hawkbit/upload/{name}").Handler(httptransport.NewServer(
+		e.GetUpload,
+		decodeGetUploadEndpoint,
 		encodeResponse,
 		options...,
 	))
@@ -44,12 +47,25 @@ func MakeFrontendHTTPHandler(s FrontendService, logger log.Logger) http.Handler 
 		encodeResponse,
 		options...,
 	))
+	r.Methods("GET").Path("/hawkbit/dist/{name}").Handler(httptransport.NewServer(
+		e.GetDistribution,
+		decodeGetDistributionEndpoint,
+		encodeResponse,
+		options...,
+	))
 	r.Methods("POST").Path("/hawkbit/deploy").Handler(httptransport.NewServer(
 		e.PostDeployment,
 		decodePostDeploymentEndpoint,
 		encodeResponse,
 		options...,
 	))
+	r.Methods("GET").Path("/hawkbit/deploy/{target}").Handler(httptransport.NewServer(
+		e.GetDeployment,
+		decodeGetDeploymentEndpoint,
+		encodeResponse,
+		options...,
+	))
+	r.PathPrefix("/hawkbit/docs").Handler(httpSwagger.WrapHandler)
 	return r
 }
 
@@ -62,6 +78,15 @@ func decodePostUploadEndpoint(_ context.Context, r *http.Request) (request inter
 	return postUploadRequest{Name: u.Name, Version: u.Version, File: u.File}, nil
 }
 
+func decodeGetUploadEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
+	vars := mux.Vars(r)
+	n, ok := vars["name"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+	return getUploadRequest{Name: n}, nil
+}
+
 func decodePostDistributionEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var d postDistributionRequest
 	e := json.NewDecoder(r.Body).Decode(&d)
@@ -71,6 +96,15 @@ func decodePostDistributionEndpoint(_ context.Context, r *http.Request) (request
 	return postDistributionRequest{Name: d.Name, Version: d.Version, Upload: d.Upload}, nil
 }
 
+func decodeGetDistributionEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
+	vars := mux.Vars(r)
+	n, ok := vars["name"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+	return getDistributionRequest{Name: n}, nil
+}
+
 func decodePostDeploymentEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var d postDeploymentRequest
 	e := json.NewDecoder(r.Body).Decode(&d)
@@ -78,6 +112,15 @@ func decodePostDeploymentEndpoint(_ context.Context, r *http.Request) (request i
 		return nil, e
 	}
 	return postDeploymentRequest{Target: d.Target, Distribution: d.Distribution}, nil
+}
+
+func decodeGetDeploymentEndpoint(_ context.Context, r *http.Request) (request interface{}, err error) {
+	vars := mux.Vars(r)
+	t, ok := vars["target"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+	return getDeploymentRequest{Target: t}, nil
 }
 
 type errorer interface {
@@ -127,9 +170,13 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 
 func codeFrom(err error) int {
 	switch err {
-	case deployment.ErrDeploymentNotFound:
+	case deployment.ErrDeploymentNotFound,
+		deployment.ErrDeploymentUploadNotFound,
+		deployment.ErrDeploymentDistNotFound:
 		return http.StatusNotFound
-	case ErrFrontendUpload, ErrFrontendDistribution, ErrFrontendDeployment:
+	case ErrFrontendUpload,
+		ErrFrontendDistribution,
+		ErrFrontendDeployment:
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
