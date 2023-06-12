@@ -22,10 +22,10 @@ type Controller struct {
 	} `json:"config"`
 	Links struct {
 		DeploymentBase struct {
-			Href string `json:"href,omitempty"`
+			Href string `json:"href"`
 		} `json:"deploymentBase"`
 		CancelAction struct {
-			Href string `json:"href,omitempty"`
+			Href string `json:"href"`
 		} `json:"cancelAction"`
 		ConfigData struct {
 			Href string `json:"href"`
@@ -107,10 +107,10 @@ type DeploymentBaseFeedback struct {
 type BackendService interface {
 	GetController(ctx context.Context, bid string) (Controller, error)
 	PostCancelActionFeedback(ctx context.Context, bid string, fb CancelActionFeedback) error
-	PostConfigData(ctx context.Context, bid string, cfg ConfigData) error
+	PutConfigData(ctx context.Context, bid string, cfg ConfigData) error
 	GetDeplymentBase(ctx context.Context, bid string, acid string) (DeploymentBase, error)
 	PostDeploymentBaseFeedback(ctx context.Context, bid string, fb DeploymentBaseFeedback) error
-	GetDownloadHttp(ctx context.Context, bid string, img string) ([]byte, error)
+	GetDownloadHttp(ctx context.Context, bid string, ver string) ([]byte, error)
 }
 
 type hawkbitBackendService struct{}
@@ -139,7 +139,7 @@ func (h *hawkbitBackendService) PostCancelActionFeedback(ctx context.Context, bi
 
 }
 
-func (h *hawkbitBackendService) PostConfigData(ctx context.Context, bid string, cfg ConfigData) error {
+func (h *hawkbitBackendService) PutConfigData(ctx context.Context, bid string, cfg ConfigData) error {
 	return nil
 }
 

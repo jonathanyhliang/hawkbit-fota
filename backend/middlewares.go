@@ -40,11 +40,11 @@ func (mw loggingMiddleware) PostCancelActionFeedback(ctx context.Context, bid st
 	return mw.next.PostCancelActionFeedback(ctx, bid, fb)
 }
 
-func (mw loggingMiddleware) PostConfigData(ctx context.Context, bid string, cfg ConfigData) (err error) {
+func (mw loggingMiddleware) PutConfigData(ctx context.Context, bid string, cfg ConfigData) (err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "PostConfigData", "bid", bid, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "PutConfigData", "bid", bid, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.PostConfigData(ctx, bid, cfg)
+	return mw.next.PutConfigData(ctx, bid, cfg)
 }
 
 func (mw loggingMiddleware) GetDeplymentBase(ctx context.Context, bid string,

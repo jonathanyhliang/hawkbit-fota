@@ -9,7 +9,7 @@ import (
 type Endpoints struct {
 	GetControllerEndpoint              endpoint.Endpoint
 	PostCancelActionFeebackEndpoint    endpoint.Endpoint
-	PostConfigDataEndpoint             endpoint.Endpoint
+	PutConfigDataEndpoint              endpoint.Endpoint
 	GetDeploymentBaseEndpoint          endpoint.Endpoint
 	PostDeploymentBaseFeedbackEndpoint endpoint.Endpoint
 	GetDownloadHttpEndpoint            endpoint.Endpoint
@@ -19,7 +19,7 @@ func MakeBackendServerEndpoints(s BackendService) Endpoints {
 	return Endpoints{
 		GetControllerEndpoint:              MakeGetControllerEndpoint(s),
 		PostCancelActionFeebackEndpoint:    MakePostCancelActionFeedbackEndpoint(s),
-		PostConfigDataEndpoint:             MakePostConfigDataEndpoint(s),
+		PutConfigDataEndpoint:              MakePutConfigDataEndpoint(s),
 		GetDeploymentBaseEndpoint:          MakeGetDeploymentBaseEndpoint(s),
 		PostDeploymentBaseFeedbackEndpoint: MakePostDeploymentBaseFeedbackEndpoint(s),
 		GetDownloadHttpEndpoint:            MakeGetDownloadHttpEndpoint(s),
@@ -42,11 +42,11 @@ func MakePostCancelActionFeedbackEndpoint(s BackendService) endpoint.Endpoint {
 	}
 }
 
-func MakePostConfigDataEndpoint(s BackendService) endpoint.Endpoint {
+func MakePutConfigDataEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(PostConfigDataRequest)
-		e := s.PostConfigData(ctx, req.Bid, req.Cfg)
-		return PostConfigDataResponse{Err: e}, nil
+		req := request.(PutConfigDataRequest)
+		e := s.PutConfigData(ctx, req.Bid, req.Cfg)
+		return PutConfigDataResponse{Err: e}, nil
 	}
 }
 
@@ -96,16 +96,16 @@ type PostCancelActionFeedbackResponse struct {
 
 func (r PostCancelActionFeedbackResponse) error() error { return r.Err }
 
-type PostConfigDataRequest struct {
+type PutConfigDataRequest struct {
 	Bid string
 	Cfg ConfigData `json:"configData,omitempty"`
 }
 
-type PostConfigDataResponse struct {
+type PutConfigDataResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r PostConfigDataResponse) error() error { return r.Err }
+func (r PutConfigDataResponse) error() error { return r.Err }
 
 type GetDeplymentBaseRequest struct {
 	Bid  string
@@ -129,9 +129,8 @@ type PostDeploymentBaseFeedbackResponse struct {
 func (r GetDeplymentBaseResponse) error() error { return r.Err }
 
 type GetDownloadHttpRequest struct {
-	Bid  string
-	Acid string
-	Ver  string
+	Bid string
+	Ver string
 }
 
 type GetDownloadHttpResponse struct {
