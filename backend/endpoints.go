@@ -70,7 +70,10 @@ func MakeGetDownloadHttpEndpoint(s BackendService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(GetDownloadHttpRequest)
 		f, e := s.GetDownloadHttp(ctx, req.Bid, req.Ver)
-		return GetDownloadHttpResponse{File: f, Err: e}, nil
+		if e != nil {
+			return GetDownloadHttpResponse{File: nil}, nil
+		}
+		return GetDownloadHttpResponse{File: f}, nil
 	}
 }
 
@@ -135,9 +138,6 @@ type GetDownloadHttpRequest struct {
 
 type GetDownloadHttpResponse struct {
 	File []byte
-	Err  error
 }
 
 func (r GetDownloadHttpResponse) file() []byte { return r.File }
-
-func (r GetDownloadHttpResponse) error() error { return r.Err }
