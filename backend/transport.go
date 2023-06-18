@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/mux"
 	"github.com/jonathanyhliang/hawkbit-fota/deployment"
@@ -73,6 +74,10 @@ func decodeGetControllerEndpoint(_ context.Context, r *http.Request) (request in
 	if !ok {
 		return nil, ErrBadRouting
 	}
+	bid, e := url.QueryUnescape(bid)
+	if e != nil {
+		return nil, ErrBadRouting
+	}
 	return GetControllerRequest{Bid: bid}, nil
 }
 
@@ -80,6 +85,10 @@ func decodePostCancelActionFeebackEndpoint(_ context.Context, r *http.Request) (
 	vars := mux.Vars(r)
 	bid, ok := vars["bid"]
 	if !ok {
+		return nil, ErrBadRouting
+	}
+	bid, e := url.QueryUnescape(bid)
+	if e != nil {
 		return nil, ErrBadRouting
 	}
 	var fb CancelActionFeedback
@@ -95,6 +104,10 @@ func decodePutConfigDataEndpoint(_ context.Context, r *http.Request) (request in
 	if !ok {
 		return nil, ErrBadRouting
 	}
+	bid, e := url.QueryUnescape(bid)
+	if e != nil {
+		return nil, ErrBadRouting
+	}
 	var cfg ConfigData
 	if e := json.NewDecoder(r.Body).Decode(&cfg); e != nil {
 		return nil, e
@@ -108,8 +121,16 @@ func decodeGetDeploymentBaseEndpoint(_ context.Context, r *http.Request) (reques
 	if !ok {
 		return nil, ErrBadRouting
 	}
+	bid, e := url.QueryUnescape(bid)
+	if e != nil {
+		return nil, ErrBadRouting
+	}
 	acid, ok := vars["acid"]
 	if !ok {
+		return nil, ErrBadRouting
+	}
+	acid, e = url.QueryUnescape(acid)
+	if e != nil {
 		return nil, ErrBadRouting
 	}
 	return GetDeplymentBaseRequest{Bid: bid, Acid: acid}, nil
@@ -119,6 +140,10 @@ func decodePostDeploymentBaseFeedbackEndpoint(_ context.Context, r *http.Request
 	vars := mux.Vars(r)
 	bid, ok := vars["bid"]
 	if !ok {
+		return nil, ErrBadRouting
+	}
+	bid, e := url.QueryUnescape(bid)
+	if e != nil {
 		return nil, ErrBadRouting
 	}
 	var fb DeploymentBaseFeedback
@@ -134,8 +159,16 @@ func decodeGetDownloadHttpEndpoint(_ context.Context, r *http.Request) (request 
 	if !ok {
 		return nil, ErrBadRouting
 	}
+	bid, e := url.QueryUnescape(bid)
+	if e != nil {
+		return nil, ErrBadRouting
+	}
 	ver, ok := vars["ver"]
 	if !ok {
+		return nil, ErrBadRouting
+	}
+	ver, e = url.QueryUnescape(ver)
+	if e != nil {
 		return nil, ErrBadRouting
 	}
 	return GetDownloadHttpRequest{Bid: bid, Ver: ver}, nil
