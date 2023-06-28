@@ -24,8 +24,8 @@ import (
 
 func main() {
 	var (
-		BackendAddr  = flag.String("ba", "192.168.179.5:8080", "Backend HTTP listen address")
-		FrontendAddr = flag.String("fa", ":8080", "Frontend HTTP listen address")
+		BackendAddr  = flag.String("b", "", "Backend HTTP listen address")
+		FrontendAddr = flag.String("f", "", "Frontend HTTP listen address")
 	)
 	flag.Parse()
 
