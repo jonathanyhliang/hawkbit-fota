@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jonathanyhliang/hawkbit-fota/deployment"
+	deployment "github.com/jonathanyhliang/hawkbit-fota/deployment"
 )
 
 var (
@@ -61,7 +61,7 @@ func (h *hawkbitFrontendService) PostUpload(ctx context.Context, n string, v str
 //	@Schemes
 //	@Description	Retrieve existing upload by specifying upload name
 //	@Tags			Hawkbit FOTA
-//	@Param			string	path	int	true	"Upload name"
+//	@Param			string	path	string	true	"Upload name"
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{array}	deployment.Upload
@@ -106,7 +106,7 @@ func (h *hawkbitFrontendService) PostDistribution(ctx context.Context, n string,
 //	@Schemes
 //	@Description	Retrieve existing distribution by specifying distribution name
 //	@Tags			Hawkbit FOTA
-//	@Param			string	path	int	true	"Distribution name"
+//	@Param			string	path	string	true	"Distribution name"
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{array}	deployment.Distribution
@@ -122,6 +122,19 @@ func (h *hawkbitFrontendService) GetDistribution(ctx context.Context, n string) 
 	return d, nil
 }
 
+// PostDeployment godoc
+//
+//	@Summary	Create new deployment
+//	@Schemes
+//	@Description	Create new deployment with distribution specified which is to be retrived
+//	@Tags			Hawkbit FOTA
+//	@Param			array	body	frontend.postDeploymentRequest	false	"New deployment"
+//	@Accept			json
+//	@Produce		json
+//	@Success		200
+//	@Failure		400
+//	@Failure		500
+//	@Router			/hawkbit/deploy [post]
 func (h *hawkbitFrontendService) PostDeployment(ctx context.Context, t string, d string) error {
 	if t == "" {
 		return ErrFrontendBadRequest
@@ -132,6 +145,20 @@ func (h *hawkbitFrontendService) PostDeployment(ctx context.Context, t string, d
 	return nil
 }
 
+// GetDeployment godoc
+//
+//	@Summary	Retrieve existing deployment
+//	@Schemes
+//	@Description	Retrieve existing deployment by specifying target name
+//	@Tags			Hawkbit FOTA
+//	@Param			string	path	string	true	"Deployment name"
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	deployment.Deployment
+//	@Failure		400
+//	@Failure		404
+//	@Failure		500
+//	@Router			/hawkbit/deploy/{name} [get]
 func (h *hawkbitFrontendService) GetDeployment(ctx context.Context, t string) (deployment.Deployment, error) {
 	dp, err := deployment.GetDeployment(t)
 	if err != nil {

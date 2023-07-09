@@ -1,0 +1,251 @@
+definitions:
+  deployment.Deployment:
+    properties:
+      actionid:
+        type: string
+      artifact:
+        $ref: '#/definitions/deployment.Distribution'
+      status:
+        $ref: '#/definitions/deployment.Status'
+      target:
+        type: string
+    type: object
+  deployment.Distribution:
+    properties:
+      image:
+        $ref: '#/definitions/deployment.Upload'
+      name:
+        example: hawkbit
+        type: string
+      version:
+        example: 1.0.0+1
+        type: string
+    type: object
+  deployment.Status:
+    properties:
+      execution:
+        type: string
+      result:
+        properties:
+          finished:
+            type: string
+        type: object
+    type: object
+  deployment.Upload:
+    properties:
+      name:
+        example: zephyr_cc3220sf_signed
+        type: string
+      sha256:
+        example: hash
+        type: string
+      size:
+        type: integer
+      url:
+        example: http://demo.svc/artifact.bin
+        type: string
+      version:
+        example: 1.0.0+1
+        type: string
+    type: object
+  frontend.postDeploymentRequest:
+    properties:
+      distribution:
+        example: hawkbit
+        type: string
+      target:
+        example: ti_cc3200wf_12345
+        type: string
+    type: object
+  frontend.postDistributionRequest:
+    properties:
+      name:
+        example: hawkbit
+        type: string
+      upload:
+        example: zephyr_cc3220sf_signed
+        type: string
+      version:
+        example: 1.0.0+1
+        type: string
+    type: object
+  frontend.postUploadRequest:
+    properties:
+      file:
+        example: /workdir/build/artifact.bin
+        type: string
+      name:
+        example: zephyr_cc3220sf_signed
+        type: string
+      version:
+        example: 1.0.0+1
+        type: string
+    type: object
+host: localhost:port/hawkbit | demo.svc/fota/hawkbit
+info:
+  contact: {}
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Hawkbit FOTA Service API
+  version: "1.0"
+paths:
+  /hawkbit/deploy:
+    post:
+      consumes:
+      - application/json
+      description: Create new deployment with distribution specified which is to be
+        retrived
+      parameters:
+      - description: New deployment
+        in: body
+        name: array
+        schema:
+          $ref: '#/definitions/frontend.postDeploymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Create new deployment
+      tags:
+      - Hawkbit FOTA
+  /hawkbit/deploy/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve existing deployment by specifying target name
+      parameters:
+      - description: Deployment name
+        in: path
+        name: string
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/deployment.Deployment'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieve existing deployment
+      tags:
+      - Hawkbit FOTA
+  /hawkbit/dist:
+    post:
+      consumes:
+      - application/json
+      description: Create new distribution with upload specified which is to be added
+        to a deployment
+      parameters:
+      - description: New distribution
+        in: body
+        name: array
+        schema:
+          $ref: '#/definitions/frontend.postDistributionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Create new distribution
+      tags:
+      - Hawkbit FOTA
+  /hawkbit/dist/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve existing distribution by specifying distribution name
+      parameters:
+      - description: Distribution name
+        in: path
+        name: string
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/deployment.Distribution'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieve existing distribution
+      tags:
+      - Hawkbit FOTA
+  /hawkbit/upload:
+    post:
+      consumes:
+      - application/json
+      description: Upload new image profile which is to be added to a distribution
+      parameters:
+      - description: New image profile
+        in: body
+        name: array
+        schema:
+          $ref: '#/definitions/frontend.postUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Upload new image
+      tags:
+      - Hawkbit FOTA
+  /hawkbit/upload/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve existing upload by specifying upload name
+      parameters:
+      - description: Upload name
+        in: path
+        name: string
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/deployment.Upload'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieve existing upload
+      tags:
+      - Hawkbit FOTA
+swagger: "2.0"

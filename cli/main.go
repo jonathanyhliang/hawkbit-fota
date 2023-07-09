@@ -9,9 +9,9 @@ import (
 	"syscall"
 
 	"github.com/go-kit/log"
-	"github.com/jonathanyhliang/hawkbit-fota/backend"
+	backend "github.com/jonathanyhliang/hawkbit-fota/backend"
 	"github.com/jonathanyhliang/hawkbit-fota/docs"
-	"github.com/jonathanyhliang/hawkbit-fota/frontend"
+	frontend "github.com/jonathanyhliang/hawkbit-fota/frontend"
 )
 
 //	@title		Hawkbit FOTA Service API

@@ -114,8 +114,8 @@ type getDistributionResponse struct {
 }
 
 type postDeploymentRequest struct {
-	Target       string `json:"target"`
-	Distribution string `json:"distribution"`
+	Target       string `json:"target" example:"ti_cc3200wf_12345"`
+	Distribution string `json:"distribution" example:"hawkbit"`
 }
 
 type postDeploymentResponse struct {

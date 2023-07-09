@@ -20,15 +20,15 @@ var (
 type Upload struct {
 	Name    string `json:"name" example:"zephyr_cc3220sf_signed"`
 	Version string `json:"version" example:"1.0.0+1"`
-	Url     string `json:"url" example:"/workdir/build/artifact.bin"`
-	Sha256  string `json:"sha256,omitempty"`
-	Size    int    `json:"size,omitempty"`
+	Url     string `json:"url" example:"http://demo.svc/artifact.bin"`
+	Sha256  string `json:"sha256" example:"hash"`
+	Size    int    `json:"size" exameple:"12345"`
 }
 
 type Distribution struct {
 	Name    string `json:"name" example:"hawkbit"`
 	Version string `json:"version" example:"1.0.0+1"`
-	Upload  Upload `json:"image,omitEmpty"`
+	Upload  Upload `json:"image"`
 }
 
 type Status struct {
