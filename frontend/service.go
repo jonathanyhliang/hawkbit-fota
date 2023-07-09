@@ -48,7 +48,7 @@ func (h *hawkbitFrontendService) PostUpload(ctx context.Context, n string, v str
 	var u deployment.Upload
 	u.Name = n
 	u.Version = v
-	u.File = f
+	u.Url = f
 	if err := deployment.SetUpload(u); err != nil {
 		return ErrFrontendUpload
 	}

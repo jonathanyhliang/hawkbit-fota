@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"net/http"
 
 	"github.com/jonathanyhliang/hawkbit-fota/deployment"
 )
@@ -173,6 +173,7 @@ func (h *hawkbitBackendService) PostDeploymentBaseFeedback(ctx context.Context, 
 }
 
 func (h *hawkbitBackendService) GetDownloadHttp(ctx context.Context, bid string, ver string) ([]byte, error) {
+	var f []byte
 	d, err := deployment.GetDeployment(bid)
 	if err != nil {
 		return nil, err
@@ -180,7 +181,12 @@ func (h *hawkbitBackendService) GetDownloadHttp(ctx context.Context, bid string,
 	if ver != d.Artifact.Upload.Version {
 		return nil, err
 	}
-	f, err := os.ReadFile(d.Artifact.Upload.File)
+	resp, err := http.Get(d.Artifact.Upload.Url)
+	if err != nil {
+		return nil, ErrBackendDownload
+	}
+	defer resp.Body.Close()
+	_, err = resp.Body.Read(f)
 	if err != nil {
 		return nil, ErrBackendDownload
 	}

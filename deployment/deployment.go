@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"os"
+	"net/http"
 	"sync"
 )
 
@@ -20,7 +20,7 @@ var (
 type Upload struct {
 	Name    string `json:"name" example:"zephyr_cc3220sf_signed"`
 	Version string `json:"version" example:"1.0.0+1"`
-	File    string `json:"file" example:"/workdir/build/artifact.bin"`
+	Url     string `json:"url" example:"/workdir/build/artifact.bin"`
 	Sha256  string `json:"sha256,omitempty"`
 	Size    int    `json:"size,omitempty"`
 }
@@ -53,14 +53,20 @@ type hawkbitDeployment struct {
 }
 
 func SetUpload(u Upload) error {
+	var f []byte
 	if u.Name == "" || u.Version == "" {
 		return ErrDeploymentUpload
 	}
-	f, err := os.ReadFile(u.File)
+	resp, err := http.Get(u.Url)
 	if err != nil {
 		return ErrDeploymentUpload
 	}
-	u.Size = len(f)
+	defer resp.Body.Close()
+	n, err := resp.Body.Read(f)
+	if err != nil {
+		return ErrDeploymentUpload
+	}
+	u.Size = n
 	hash := sha256.Sum256(f)
 	u.Sha256 = fmt.Sprintf("%x", hash)
 	dp.mtx.Lock()
